@@ -1,3 +1,3 @@
 # Homelab
 
-Repositorio focado em implementar soluções no meu homelab
+Repositório focado em implementar soluções no meu homelab
