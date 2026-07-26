@@ -1,0 +1,14 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: registry-ingress
+  namespace: registry
+spec:
+  entryPoints:
+    - web
+  routes:
+    - match: Host(`rgstibursio.ip.odhserver.com`)
+      kind: Rule
+      services:
+        - name: registry-svc
+          port: 5000
