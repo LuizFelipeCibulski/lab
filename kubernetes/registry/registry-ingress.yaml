@@ -7,7 +7,7 @@ spec:
   entryPoints:
     - web
   routes:
-    - match: Host(`rgstibursio.ip.odhserver.com`)
+    - match: Host(`rgstibursio.ip.odhserver.com`) #DNS privado, acesso somente via vpn ou local
       kind: Rule
       services:
         - name: registry-svc
