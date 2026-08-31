@@ -1,0 +1,24 @@
+project: default
+source:
+  repoURL: https://charts.longhorn.io
+  targetRevision: 1.12.1
+  helm:
+    parameters:
+      - name: ingress.enabled
+        value: 'true'
+      - name: ingress.host
+        value: horntibursio.local
+      - name: ingress.ingressClassName
+        value: traefik
+      - name: preUpgradeChecker.jobEnabled
+        value: 'false'
+      - name: preUpgradeChecker.upgradeVersionCheck
+        value: 'true'
+  chart: longhorn
+destination:
+  server: https://kubernetes.default.svc
+  namespace: longhorn-system
+syncPolicy:
+  syncOptions:
+    - CreateNamespace=true
+    - Delete=true

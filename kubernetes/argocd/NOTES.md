@@ -1,0 +1,1 @@
+Todos os arquivos foram apenas copiados da interface do argocd, a configuração foi feita pela UI :)

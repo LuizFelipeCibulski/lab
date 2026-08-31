@@ -1,0 +1,11 @@
+project: default
+source:
+  repoURL: https://github.com/LuizFelipeCibulski/lab
+  path: kubernetes/registry
+  targetRevision: main
+destination:
+  server: https://kubernetes.default.svc
+  namespace: registry
+syncPolicy:
+  syncOptions:
+    - CreateNamespace=true

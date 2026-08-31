@@ -1,0 +1,15 @@
+project: default
+source:
+  repoURL: https://traefik.github.io/charts
+  targetRevision: 41.4.0
+  helm:
+    parameters:
+      - name: experimental.kubernetesGateway.enabled
+        value: 'true'
+  chart: traefik
+destination:
+  server: https://kubernetes.default.svc
+  namespace: traefik
+syncPolicy:
+  syncOptions:
+    - CreateNamespace=true
