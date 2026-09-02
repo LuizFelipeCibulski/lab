@@ -1,0 +1,51 @@
+project: default
+source:
+  repoURL: https://prometheus-community.github.io/helm-charts
+  targetRevision: 65.5.0
+  helm:
+    parameters:
+      - name: defaultRules.rules.kubePrometheusGeneral
+        value: 'false'
+      - name: defaultRules.rules.kubePrometheusNodeRecording
+        value: 'false'
+      - name: kubeApiServer.tlsConfig.insecureSkipVerify
+        value: 'true'
+      - name: prometheus.prometheusSpec.podMonitorSelectorNilUsesHelmValues
+        value: 'false'
+      - name: prometheus.prometheusSpec.probeSelectorNilUsesHelmValues
+        value: 'false'
+      - name: prometheus.prometheusSpec.ruleSelectorNilUsesHelmValues
+        value: 'false'
+      - name: prometheus.prometheusSpec.serviceMonitorSelectorNilUsesHelmValues
+        value: 'false'
+    releaseName: kube-prometheus-stack
+    values: |
+      grafana:
+        enabled: true
+        adminPassword: q1w2e3@Optidata
+        persistence:
+          enabled: true
+          size: 5Gi
+      prometheus:
+        prometheusSpec:
+          retention: 10d
+          storageSpec:
+            volumeClaimTemplate:
+              spec:
+                resources:
+                  requests:
+                    storage: 20Gi
+      alertmanager:
+        enabled: true
+  chart: kube-prometheus-stack
+destination:
+  server: https://kubernetes.default.svc
+  namespace: monitoring
+syncPolicy:
+  automated:
+    prune: false
+    selfHeal: false
+    enabled: false
+  syncOptions:
+    - CreateNamespace=true
+    - ServerSideApply=true
