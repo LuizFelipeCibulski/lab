@@ -1,0 +1,12 @@
+all:
+  hosts:
+    m01:
+      ansible_host: 10.15.100.150
+    w01:
+      ansible_host: 10.15.100.151
+masters:
+  hosts:
+    m01:
+workers:
+  hosts:
+    w01:

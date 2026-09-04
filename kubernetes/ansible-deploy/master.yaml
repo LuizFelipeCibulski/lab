@@ -1,0 +1,59 @@
+---
+- name: Iniciando cluster Kubernetes
+  hosts: masters
+  become: true
+  tasks:
+    - name: Validar se ja esta instalado
+      ansible.builtin.stat:
+        path: /etc/kubernetes/admin.conf
+      register: kubeadm_init_check
+
+    - name: Rodar kubeadm init
+      ansible.builtin.command:
+        cmd: kubeadm init --pod-network-cidr=192.168.0.0/16
+      register: kubeadm_init_output
+      when: not kubeadm_init_check.stat.exists
+
+    - name: Criando diretorio .kube
+      ansible.builtin.file:
+        path: /root/.kube
+        state: directory
+        mode: '0755'
+
+    - name: Copiar admin.conf e .kube/config
+      ansible.builtin.copy:
+        src: /etc/kubernetes/admin.conf
+        dest: /root/.kube/config
+        remote_src: true
+        owner: root
+        group: root
+        mode: '0600'
+
+    - name: Gerar o token join 
+      ansible.builtin.command:
+        cmd: kubeadm token create --print-join-command
+      register: kubeadm_join_command
+      changed_when: false
+
+    - name: Guardar o comando para iniciar os workers 
+      ansible.builtin.set_fact:
+        join_command: "{{ kubeadm_join_command.stdout }}"
+
+    - name: Compartilhamento do comando 
+      ansible.builtin.add_host:
+        name: "join_command_holder"
+        join_cmd: "{{ kubeadm_join_command.stdout }}"
+
+- name: Adicionando workers node no cluster
+  hosts: workers
+  become: true
+  tasks:
+    - name: Validando se o node ja esta inicializado
+      ansible.builtin.stat:
+        path: /etc/kubernetes/kubelet.conf
+      register: kubelet_conf_check
+
+    - name: Rodando o kuberadm join
+      ansible.builtin.command:
+        cmd: "{{ hostvars['join_command_holder']['join_cmd'] }}"
+      when: not kubelet_conf_check.stat.exists

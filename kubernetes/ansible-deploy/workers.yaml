@@ -1,0 +1,14 @@
+---
+- name: Adicionando workers node no cluster
+  hosts: workers
+  become: true
+  tasks:
+    - name: Validando se o node ja esta inicializado
+      ansible.builtin.stat:
+        path: /etc/kubernetes/kubelet.conf
+      register: kubelet_conf_check
+
+    - name: Rodando o kuberadm join
+      ansible.builtin.command:
+        cmd: "{{ hostvars['join_command_holder']['join_cmd'] }}"
+      when: not kubelet_conf_check.stat.exists

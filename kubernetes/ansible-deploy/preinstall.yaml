@@ -1,0 +1,53 @@
+---
+- name: Atalizando hostname
+  hosts: all
+  become: true
+  vars:
+    domain_name: "local"
+
+  tasks:
+    - name: Hostname sysctl
+      ansible.builtin.hostname:
+        name: "{{ inventory_hostname }}"
+
+    - name: Configurando o arquivo hosts
+      ansible.builtin.lineinfile:
+        path: /etc/hosts
+        regexp: '^127\.0\.1\.1'
+        line: "127.0.1.1 {{ inventory_hostname }}.{{ domain_name }} {{ inventory_hostname }}"
+        state: present
+
+- name: Desabilitar swap
+  hosts: all
+  become: true
+  tasks:
+    - name: Removendo da sessao atual
+      ansible.builtin.command: swapoff -a
+
+    - name: Removendo do /etc/fstab
+      ansible.posix.mount:
+        name: none
+        fstype: swap
+        state: absent
+
+- name: Parar e desabilitar servico
+  hosts: all
+  become: yes
+  tasks:
+    - name: Para e desabilitar o ufw
+      ansible.builtin.service:
+        name: ufw
+        state: stopped
+        enabled: false
+
+- name: Parametros sysctl
+  hosts: all
+  become: yes
+  tasks:
+    - name: Adicionando parametros no sysctl
+      ansible.posix.sysctl:
+        name: net.ipv4.ip_forward
+        value: '1'
+        sysctl_set: true
+        reload: true
+      

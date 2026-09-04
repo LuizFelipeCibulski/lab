@@ -1,0 +1,76 @@
+---
+- name: Install Cilium CLI
+  hosts: masters
+  become: true
+  vars:
+    cilium_install_dir: /usr/local/bin
+    cilium_tmp_dir: /tmp/cilium-cli-install
+
+  tasks:
+    - name: Check if cilium CLI is already installed
+      ansible.builtin.command: cilium version --client
+      register: cilium_check
+      changed_when: false
+      failed_when: false
+
+    - name: Get latest stable Cilium CLI version
+      ansible.builtin.uri:
+        url: https://raw.githubusercontent.com/cilium/cilium-cli/main/stable.txt
+        return_content: true
+      register: cilium_version_raw
+      when: cilium_check.rc != 0
+
+    - name: Set Cilium CLI version fact
+      ansible.builtin.set_fact:
+        cilium_cli_version: "{{ cilium_version_raw.content | trim }}"
+      when: cilium_check.rc != 0
+
+    - name: Map architecture to CLI arch name
+      ansible.builtin.set_fact:
+        cli_arch: "{{ 'arm64' if ansible_architecture == 'aarch64' else 'amd64' }}"
+      when: cilium_check.rc != 0
+
+    - name: Create temporary download directory
+      ansible.builtin.file:
+        path: "{{ cilium_tmp_dir }}"
+        state: directory
+        mode: '0755'
+      when: cilium_check.rc != 0
+
+    - name: Download Cilium CLI tarball
+      ansible.builtin.get_url:
+        url: "https://github.com/cilium/cilium-cli/releases/download/{{ cilium_cli_version }}/cilium-linux-{{ cli_arch }}.tar.gz"
+        dest: "{{ cilium_tmp_dir }}/cilium-linux-{{ cli_arch }}.tar.gz"
+        mode: '0644'
+      when: cilium_check.rc != 0
+
+    - name: Download Cilium CLI checksum file
+      ansible.builtin.get_url:
+        url: "https://github.com/cilium/cilium-cli/releases/download/{{ cilium_cli_version }}/cilium-linux-{{ cli_arch }}.tar.gz.sha256sum"
+        dest: "{{ cilium_tmp_dir }}/cilium-linux-{{ cli_arch }}.tar.gz.sha256sum"
+        mode: '0644'
+      when: cilium_check.rc != 0
+
+    - name: Verify checksum
+      ansible.builtin.shell:
+        cmd: "sha256sum --check cilium-linux-{{ cli_arch }}.tar.gz.sha256sum"
+        chdir: "{{ cilium_tmp_dir }}"
+      changed_when: false
+      when: cilium_check.rc != 0
+
+    - name: Extract Cilium CLI to /usr/local/bin
+      ansible.builtin.unarchive:
+        src: "{{ cilium_tmp_dir }}/cilium-linux-{{ cli_arch }}.tar.gz"
+        dest: "{{ cilium_install_dir }}"
+        remote_src: true
+        mode: '0755'
+      when: cilium_check.rc != 0
+
+    - name: Clean up temporary download directory
+      ansible.builtin.file:
+        path: "{{ cilium_tmp_dir }}"
+        state: absent
+      when: cilium_check.rc != 0
+
+    - name: Start
+      ansible.builtin.shell: cilium install 
